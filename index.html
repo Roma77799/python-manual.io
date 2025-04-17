@@ -8,6 +8,10 @@
     <link rel="icon" href="https://github.com/Roma77799/python-manual.io/blob/main/images/favicon2.png?raw=true" type="image/x-icon">
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
             line-height: 1.6;
@@ -15,53 +19,75 @@
             padding: 0;
             background-color: #f4f4f4;
         }
+
         header {
             background-color: #333;
             color: white;
-            padding: 10px 0;
+            padding: 10px;
             text-align: center;
+            position: relative;
         }
+
+        header img {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 80px;
+            height: auto;
+        }
+
         nav {
             background-color: #444;
             padding: 15px;
-            position: fixed;
             width: 200px;
+            position: fixed;
             top: 0;
             left: 0;
             height: 100%;
+            overflow-y: auto;
         }
+
         nav ul {
             list-style-type: none;
             padding: 0;
+            margin: 0;
         }
+
         nav ul li {
             margin: 10px 0;
         }
+
         nav ul li a {
             color: white;
             text-decoration: none;
             display: block;
             padding: 8px;
+            border-radius: 4px;
         }
+
         nav ul li a:hover {
             background-color: #555;
         }
+
         main {
             margin-left: 220px;
             padding: 20px;
         }
+
         h1 {
             color: #ffffff;
         }
 
         h2 {
-            color: #000000
+            color: #000000;
         }
+
         code {
             background-color: #eee;
             padding: 5px;
             font-family: Consolas, monospace;
         }
+
         pre {
             background-color: #eee;
             padding: 10px;
@@ -69,12 +95,48 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
+
+        /* Адаптивный стиль */
+        @media (max-width: 768px) {
+            nav {
+                position: relative;
+                width: 100%;
+                height: auto;
+                padding: 10px;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 15px;
+            }
+
+            nav ul {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            nav ul li a {
+                padding: 10px;
+                border-bottom: 1px solid #666;
+            }
+
+            header img {
+                position: static;
+                display: block;
+                margin: 10px auto 0;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
     </style>
 </head>
 <body>
     <header>
         <h1>Мануал для Python [Основы]</h1>
-        <img src="https://github.com/Roma77799/python-manual.io/blob/main/images/python.png?raw=true" alt="Python Logo" style="position: absolute; top: 10px; right: 10px; width: 100px;">
+        <img src="https://github.com/Roma77799/python-manual.io/blob/main/images/python.png?raw=true" alt="Python Logo">
     </header>
     
     <nav>
@@ -935,7 +997,6 @@ print(mymodule.greet("Alice"))</code></pre>
     <h3>Заключение</h3>
     <p>Модули в Python — это мощный инструмент для организации кода, его повторного использования и разделения программы на логические блоки. С помощью модулей можно легко использовать как стандартные библиотеки Python, так и сторонние пакеты, что значительно расширяет возможности вашего проекта.</p>
 </section>
-
     </main>
 </body>
 </html>
